@@ -40,7 +40,10 @@ modelo_dias = joblib.load('modelo_dias_pipeline_70.joblib')
 label_encoder = joblib.load('label_encoder_dias_70.joblib')
 
 # Filtro de estado
+
+  
 with st.sidebar:
+    st.image("danu_logo.png", use_container_width=True)
     st.subheader("🎛 Filtro de Estado")
     estados = ["Nacional"] + sorted(df['estado_del_cliente'].dropna().unique())
     estado_sel = option_menu(
