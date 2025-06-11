@@ -371,28 +371,38 @@ with tabs[1]:
         )
 
         # ==================== TABLA DE % FLETE SOBRE PRECIO ====================
+        # ==================== TABLA DE % FLETE SOBRE PRECIO ====================
         st.subheader("💸 Relación Envío–Precio: ¿Gasto Justificado?")
         
         df_precio = df_filtrado.copy()
         df_precio['porcentaje_flete'] = (df_precio['costo_de_flete'] / df_precio['precio']) * 100
         
-        tabla = df_precio.groupby('categoria')['porcentaje_flete'].mean().reset_index()
-        tabla = tabla.sort_values(by='porcentaje_flete', ascending=False)
+        # Si el usuario seleccionó un estado, se usa el df filtrado normalmente
+        if estado_sel:
+            tabla = df_precio.groupby('categoria')['porcentaje_flete'].mean().reset_index()
         
-        # Aplicar el emoji y formatear
-        tabla['porcentaje_flete_raw'] = tabla['porcentaje_flete']  # guardamos valor real para condicional
+        # Si NO hay estado seleccionado (es decir, vista nacional), tomamos el top 3 de categorías con más pedidos
+        else:
+            top_3_categorias = (
+                df_precio['categoria'].value_counts()
+                .head(3)
+                .index
+                .tolist()
+            )
+            df_precio = df_precio[df_precio['categoria'].isin(top_3_categorias)]
+            tabla = df_precio.groupby('categoria')['porcentaje_flete'].mean().reset_index()
+        
+        # Ordenar y aplicar formato condicional
+        tabla = tabla.sort_values(by='porcentaje_flete', ascending=False)
+        tabla['porcentaje_flete_raw'] = tabla['porcentaje_flete']
         tabla['porcentaje_flete'] = tabla['porcentaje_flete'].apply(
             lambda x: f"🔺 {x:.1f}%" if x >= 40 else f"{x:.1f}%"
         )
         
         tabla_h = tabla.set_index('categoria')[['porcentaje_flete']].T
         
-        # Estilo condicional: rojo si ≥ 40%
         def highlight_if_high(s):
-            return [
-                'color: red; font-weight: bold' if '🔺' in str(v) else ''
-                for v in s
-            ]
+            return ['color: red; font-weight: bold' if '🔺' in str(v) else '' for v in s]
         
         st.dataframe(
             tabla_h.style.apply(highlight_if_high, axis=1),
